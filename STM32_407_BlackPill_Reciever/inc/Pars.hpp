@@ -51,7 +51,7 @@ class ParsFSM{
 };
 
 
-
-
+void FSM(char arr[], uint8_t length,int &sym_index,int &str_index,uint8_t &pkg_is_begin,uint8_t &pkg_is_received, char sym);
+void pars_buf_clear(char pars_buf[], uint8_t length);
 
 #endif

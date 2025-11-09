@@ -30,31 +30,17 @@ Circular_buffer b;
 uint8_t ch;
 
 
-
-enum State{
-    idle,
-    data,
-    fin,
-    err
-};
-State state = idle;
-
-
-
-
-
-void FSM(char arr[], uint8_t length,int &sym_index,int &str_index,char sym);
-
-//БУФФЕР ПАРСИНГА
-//строка 0 --- первое рапарсированное число
-//строка 1 ---второе распарсированное число
+//БУФФЕР ПАРСИНГА - хранит строку, очищенную от приамбулы и терминатора
 const uint8_t PARS_SYMBOLS_SIZE =32;
 int sym_index_2 = 0;int str_index_2 =0;
 char pars_buf[PARS_SYMBOLS_SIZE];
-void pars_buf_clear(void);
+// void pars_buf_clear(char pars_buf[], uint8_t length);
 void pars_buf_uart_print(void);
 
 
+//БУФФЕР СТРОК ПОСЛЕ ПАРСИНГА - хранит строки, разделенные разделителем
+//строка 0 --- первое рапарсированное число (Ключ)
+//строка 1 ---второе распарсированное число
 const uint8_t SYMBOLS_LENGTH =5;
 const uint8_t STRINGS_LENGTH =5;
 int sym_indx = 0;int str_indx =0;
@@ -81,7 +67,7 @@ void usart2_isr(void)
 				ch = b.get();
 				usart_send_blocking(USART3,ch);
 				//использование конечного автомата		
-				FSM(pars_buf,PARS_SYMBOLS_SIZE, sym_index_2, str_index_2,ch);
+				FSM(pars_buf,PARS_SYMBOLS_SIZE, sym_index_2, str_index_2,pkg_is_begin,pkg_is_received,ch);
 			}	
 				
 		}     
@@ -221,12 +207,7 @@ void buf_clear(void){ //функция очистки буфера парсин�
 	}
 }
 
-void pars_buf_clear(void){
-	for(int i =0; i< PARS_SYMBOLS_SIZE; i++){
-		
-		pars_buf[i] = '\0' ;
-	}
-}
+
 
 void pars_buf_uart_print(void){
 	usart_send_blocking(USART3,'\t');
@@ -236,66 +217,7 @@ void pars_buf_uart_print(void){
 			}
 }
 
-void FSM(char arr[], uint8_t length,int &sym_index,int &str_index,char sym){
-	// usart_send_blocking(uart,'\n');
-	// 		for(int i =0; i< length; i++){
-	// 				if (arr[i]=='\0'){continue;}
-	// 			arr[i] ='a';	
-	// 		}
-	// usart_send_blocking(uart,'\t');		
 
-	// //КОНЕЧНЫЙ АВТОМАТ
-					switch(state){
-						case idle:
-							if(sym == '$'){
-								state = data;
-								pars_buf_clear();
-							}// Принят маркер, переходим к приёму данных
-							else {}
-						break;
-						case data:
-							pkg_is_received = 0;
-							if(sym == '*'){
-								state = fin;
-								pkg_is_begin=0;
-								pkg_is_received = 1;
-							}//Принят терминатор, заканчиваем приём данных
-							else if (sym == '$'){
-								state = err;
-								sym_index = 0;
-								str_index = 0;
-							}
-							else {
-                                arr[sym_index] = sym;
-								sym_index++;
-								sym_index %= length;
-								// usart_send_blocking(USART3,ch);
-							}
-							
-						break;
-						case fin:
-							sym_index = 0;
-							str_index = 0;
-							if (sym == '$'){
-								state = data;
-								pars_buf_clear();
-							} 
-						else {
-							state = err;
-						} 
-						break;
-						case err:
-							if (sym == '$'){
-								sym_index = 0;
-								str_index = 0;
-								state = data;
-								pars_buf_clear();
-							} 
-						// str_index=0;sym_index=0;
-						break;
-						// default:
-					}
-}
 
 uint8_t led_num = 0b00000001;
 
